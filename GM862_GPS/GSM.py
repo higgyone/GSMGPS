@@ -1,6 +1,7 @@
 import sys
 import time
 import serial
+import GM862
 
 class GSM(object):
     """Class to switch on and do GSM stuff"""
@@ -11,52 +12,10 @@ class GSM(object):
 
     ext = ("````````````````````^```````````````````{}`````\\````````````[~]`"
         "|````````````````````````````````````?``````````````````````````")
-
-    TimeoutNormal = 1
-    TimeoutLong = 10
    
-    def __init__(self):
-        print("The GSM module has been initialised")
-        self.serialConnect = None
-
-    def SerialConnect(self, serPort = 'COM5', baud = 19200, bytes = serial.EIGHTBITS, 
-                      par = serial.PARITY_NONE, stop = serial.STOPBITS_ONE, time = GSM.TimeoutNormal):
-        """connect to serial port, default com5"""
-        try:
-            self.serialConnect = serial.Serial(
-                                   port = serPort,
-                                   baudrate = baud,
-                                   bytesize = bytes,
-                                   parity = par,
-                                   stopbits = stop,
-                                   timeout = time)
-            print("Serial port open on: " + serPort)
-            self.serialBaud = baud
-            return True
-        except:
-            print("Failed to open serial port: ", sys.exc_info()[0])
-            return False
-
-    def SerialDisconnect(self):
-        """close serial port"""
-        if(self.serialConnect.isOpen()):
-            self.serialConnect.close()
-            print("serial port closed")
-        else:
-            print("serial port not closed as was not open in the first place")
-
-    def SendCommand(self, command):
-        """sends a command to the device"""
-        ans = None
-        if(self.serialConnect.isOpen()):
-            self.serialConnect.write(command.encode())
-            ser.flush()
-            ans = self.serialConnect.read(1000)
-            self.serialConnect.flush()
-            print (ans.strip())
-            return ans.strip()
-        else:
-            return ans
+    def __init__(self, gm862):
+        print("The GSM module has been initialised")   
+        self.gm862 = gm862 
 
     def gsm_encode(self, plaintext):
         """converts string into 7-bit gsm characters for sms"""
@@ -73,27 +32,11 @@ class GSM(object):
         "return the byte array not the hex bytes"
         return res
 
-    def Initialise862SerialSettings(self):
-        """initialise the serial connection between 862 and master"""
-        if(self.serialConnect.isOpen()):
-            "Auto baud to let the modem know the baud rate"
-            self.SendCommand("AT\r")
-
-            "Fix baud to self.serialBaud now they can communicate"
-            sendBaud = "AT+IPR=" + str(self.serialBaud) + "\r"
-            print(sendBaud)
-            SendCommand(sendBaud)
-        else:
-            print("serial port is not open, cannot initialise")
-            return False
-
-    
-    
-    def gsm_SendMessageToPhone(self, number, message):
+    def SendTextToPhone(self, number, message):
         """method to send a text message to a phone number"""
         try:
-            if(self.serialConnect.isOpen()):
-                print("Serial port is open")
+            if(self.gm862.serialConnect.isOpen()):
+                print("Serial port is open GSM")
                 phoneNumberCmd = "AT+CMGS="+number+"\r"
                 self.serialConnect.write(phoneNumberCmd.encode())
                 self.serialConnect.flush()
@@ -114,9 +57,50 @@ class GSM(object):
         except:
             print("Error checking serial port open: ", sys.exc_info()[0])
 
+    def ExtendSimErrorResults(self):
+        """Enable extended error result codes for SIM checking =1 is normal & =2 is verbose"""
+        print("extend sim error results")
+        self.gm862.SendCommand("AT+CMEE=2\r")
+
+    def GetSimPresent(self):
+        """Query SIM presence and status"""
+        print("get sim present")
+        self.gm862.SendCommand("AT+CPIN?\r")
+
+    def GetRssiAndQuality(self):
+        """Query RSSI and quality. Answer is <rssi>, <ber> with result 99 = not detected. 
+        rssi higher number the better, ber only for voice quality, dont worry about it"""
+        print("rssi and quality")
+        self.gm862.SendCommand("AT+CSQ\r")
+
+    def QueryNetworkStatus(self):
+        """Query network status... repeat this until CREG: 0,1 or CREG:1,1 which means mobile registered on its home network"""
+        print("network status")
+        self.gm862.SendCommand("AT+CREG?\r")
+
+    def QueryNetworkOperator(self):
+        """Query network operator ID... this requires a few seconds. First network is one connected to
+        note can take a while"""
+        print("network operator")
+        self.gm862.SetSerialTimeout(self.gm862.TimeoutLong)
+        self.gm862.SendCommand("AT+COPS=?\r")
+        self.gm862.SetSerialTimeout(self.gm862.TimeoutNormal)
+
+    def SetSmsPduType(self, type = 1):
+        """Set SMS type 0=PDU, 1=text. Use 1 as on PDU need to craft entire PDU"""
+        print("set pdu type")
+        self.gm862.SendCommand("AT+CMGF=" + str(type) + "\r")
+
+    def CheckServiceNumber(self):
+        """Check SMS service centre number... must have one or no SMS
+        result is <number>,<type> note this is in SIM and persistant set by network... only needs checking once
+        type is  145 - international or 129 - national """
+        print("check service number")
+        self.gm862.SendCommand("AT+CSCA?\r")
+
 
 if __name__ == "__main__":
-    print("This module is not callable")
+    print("This GSM module is not callable")
     input("\n\nPress the enter key to exit.")
 
 

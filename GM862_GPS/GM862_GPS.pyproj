@@ -25,6 +25,9 @@
     <Compile Include="GGAParser.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="GM862.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="GM862_GPS.py" />
     <Compile Include="GSM.py">
       <SubType>Code</SubType>
