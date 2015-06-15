@@ -11,6 +11,10 @@ class GM862(object):
     def __init__(self):
         print("The GM862 module has been initialised")
         self.serialConnect = None
+        self.State_On = False
+        self.StateInitialized = False
+        self.State_Registered = False
+        self.State_Posfix = False
 
     def SerialConnection(self, serPort = 'COM5', baud = 19200, bytes = serial.EIGHTBITS, 
                       par = serial.PARITY_NONE, stop = serial.STOPBITS_ONE):
@@ -37,6 +41,7 @@ class GM862(object):
             print("serial port closed")
         else:
             print("serial port not closed as was not open in the first place")
+        self.State_Initialized = False
 
     def SetSerialTimeout(self, timeout):
         """set the timeout of the serial connection"""
@@ -55,7 +60,6 @@ class GM862(object):
             for i in range (len(responseList)):
                 responseList[i] = responseList[i].strip()
             responseList = list(filter(None, responseList))
-            print (response.strip())
             print(str(responseList))
             return responseList
         else:
@@ -74,9 +78,12 @@ class GM862(object):
             "Fix baud to self.serialBaud now they can communicate"
             print("setting baud rate")
             self.SendCommand("AT+IPR=" + str(self.serialBaud) + "\r")
+
+            self.State_Initialized = True
             return True
         else:
             print("serial port is not open, cannot initialise")
+            self.State_Initialized = False
             return False
 
     def Switch862Off(self):
@@ -88,10 +95,8 @@ class GM862(object):
             SendCommand("AT#SHDN\r")
             print("Shutdown sent")
             self.SerialDisconnect()
-            return True
         else:
             print("serial port was not open in the first place")
-            return False
 
 if __name__ == "__main__":
     print("This GM862 module is not callable")

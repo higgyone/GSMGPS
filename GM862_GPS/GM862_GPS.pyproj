@@ -29,6 +29,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="GM862_GPS.py" />
+    <Compile Include="GPS.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GPSGGA.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="GSM.py">
       <SubType>Code</SubType>
     </Compile>
