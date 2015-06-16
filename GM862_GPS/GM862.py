@@ -9,6 +9,7 @@ class GM862(object):
     TimeoutLong = 10
 
     def __init__(self):
+        """constructor"""
         print("The GM862 module has been initialised")
         self.serialConnect = None
         self.State_On = False
@@ -73,7 +74,12 @@ class GM862(object):
         if(self.serialConnect.isOpen()):
             "Auto baud to let the modem know the baud rate"
             print("autobaud")
-            self.SendCommand("AT\r")
+            result = self.SendCommand("AT\r")
+
+            """no response from unit check"""
+            if not result:
+                print("Failed to connect over serial... Switch Unit On")
+                return False
 
             "Fix baud to self.serialBaud now they can communicate"
             print("setting baud rate")
@@ -87,7 +93,7 @@ class GM862(object):
             return False
 
     def Switch862Off(self):
-        """ switch module off"""
+        """switch module off"""
         if(self.serialConnect.isOpen()):
             "the module will shutdown after a maximum of 6 seconds"
             self.serialConnect.timeout = GM862.TimeoutLong

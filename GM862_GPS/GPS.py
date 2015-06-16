@@ -7,7 +7,7 @@ class GPS(object):
     def __init__(self, gm862):
         print("The GPS module has been initialised")   
         self.gm862 = gm862 
-        self.gpsParser = GGAParser.GgaGpsParser()
+        self.gpsParser = GGAParser.GgaGpsParser(gm862)
 
 
     def InitialiseGPS(self):
@@ -19,10 +19,12 @@ class GPS(object):
     def IsGpsOn(self):
         """Get the GPS powered status"""
         status = self.gm862.SendCommand("AT$GPSP?\r")
-        if(status[1].endswith(b"1")):
-           return True
-        else:
-           return False
+        gpsOn = False
+        if(len(status) == 3):
+            if(status[1].endswith(b"1")):
+               gpsOn = True
+        
+        return gpsOn
 
     def PowerGpsOn(self):
         """Power the GPS on"""
